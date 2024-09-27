@@ -1,0 +1,316 @@
+/
+Sonnets with commented code 4-18R
+19 of 21
+
+    ﻿
+    #Jockers method
+    #setwd on Mac
+    setwd("~/Desktop/Sonnets R")
+    #On PC, 
+    setwd("C:/Users/Amanda/Desktop/sonnets R")
+    ﻿
+    library(XML)
+    install.packages("mallet")
+    library(mallet)
+    install.packages("rJava")
+    library(rJava)
+    #to get rJAva to work, had to install Java SE Development Kit 8
+    ﻿
+    ﻿
+    inputDir <- "FolgerDigitalTexts_XML_Son"
+    ﻿
+    files.v <- dir(path = inputDir, pattern=".*xml")
+    ﻿
+    chunk.size <- 1000 # number of words per chunk
+    ﻿
+    makeFlexTextChunks <- function(doc.object, chunk.size=500, percentage=TRUE){
+      paras <- getNodeSet(doc.object,
+                          "/d:TEI/d:text/d:body/d:div1/d:div2/d:ab//d:w",
+                          c(d = "http://www.tei-c.org/ns/1.0"))
+      words <- paste(sapply(paras,xmlValue), collapse=" ")
+      words.lower <- tolower(words)
+      words.lower <- gsub("[^[:alnum:][:space:]']", " ", words.lower)
+      words.l <- strsplit(words.lower, "\\s+")
+      word.v <- unlist(words.l)
+      x <- seq_along(word.v)
+      if(percentage){
+        max.length <- length(word.v)/chunk.size
+        chunks.l <- split(word.v, ceiling(x/max.length))
+      } else {
+        chunks.l <- split(word.v, ceiling(x/chunk.size))
+        #deal with small chunks at the end
+        if(length(chunks.l[[length(chunks.l)]]) <=
+           length(chunks.l[[length(chunks.l)]])/2){
+          chunks.l[[length(chunks.l)-1]] <-
+            c(chunks.l[[length(chunks.l)-1]],
+              chunks.l[[length(chunks.l)]])
+          chunks.l[[length(chunks.l)]] <- NULL
+        }
+      }
+      chunks.l <- lapply(chunks.l, paste, collapse=" ")
+      chunks.df <- do.call(rbind, chunks.l)
+      return(chunks.df)
+    }
+    topic.m <- NULL
+    for(i in 1:length(files.v)){
+      doc.object <- xmlTreeParse(file.path(inputDir, files.v[i]),
+                                 useInternalNodes=TRUE)
+      chunk.m <- makeFlexTextChunks(doc.object, chunk.size,
+                                    percentage=FALSE)
+      textname <- gsub("\\..*","", files.v[i])
+      segments.m <- cbind(paste(textname,
+                                segment=1:nrow(chunk.m), sep="_"), chunk.m)
+      topic.m <- rbind(topic.m, segments.m)
+    }
+    ﻿
+    documents <- as.data.frame(topic.m, stringsAsFactors=F)
+    colnames(documents) <- c("id", "text")
+    ﻿
+    mallet.instances <- mallet.import(documents$id,
+                                      documents$text,
+                                      "FolgerDigitalTexts_XML_Son/em stopwordlist.csv",
+                                      FALSE,
+                                      token.regexp="[\\p{L}']+")
+    ﻿
+    ## Create a topic trainer object.
+    topic.model <- MalletLDA(num.topics=50)
+    topic.model$loadDocuments(mallet.instances)
+    ﻿
+    vocabulary <- topic.model$getVocabulary()
+    ﻿
+    word.freqs <- mallet.word.freqs(topic.model)
+    ﻿
+    topic.model$setAlphaOptimization(40, 80)
+    topic.model$train(400)
+    ﻿
+    ﻿
+    ﻿
+    word.freqs
+    head(word.freqs)
+    order(term.freq[1:50], decreasing = TRUE)
+    vocabulary
+    topic.words.m <- mallet.topic.words(topic.model,
+                                        smoothed=TRUE,
+                                        normalized=TRUE)
+    plot(topic.words.m)
+    dim(topic.words.m)
+    order(topic.words.m[10:1], decreasing = TRUE)
+    plot(term.freq[1:50], doc.freq[1:50])
+    ﻿
+    #Awati method
+    #load topicmodels, tm
+    library(tm)
+    #preprocess text to a dtm
+    #set a wd; save the .txt of the sonnets into its own file folder (since we are working with one document)
+    setwd("C:/Users/Amanda/Desktop/Sonnets R/directory for article/txt only!")
+    #load files into corpus
+    #get listing of .txt files in directory
+    filenames <- list.files(getwd(),pattern="*.txt")
+    ﻿
+    #read files into a character vector
+    files <- lapply(filenames,readLines)
+    files
+    ﻿
+    #create corpus from vector
+    docs <- Corpus(VectorSource(files))
+    ﻿
+    #start preprocessing
+    #Transform to lower case
+    docs <-tm_map(docs,content_transformer(tolower))
+    #remove potentially problematic symbols
+    toSpace <- content_transformer(function(x, pattern) {return (gsub(pattern, "", x))})
+    docs <- tm_map(docs, toSpace, "-")
+    docs <- tm_map(docs, toSpace, "’")
+    docs <- tm_map(docs, toSpace, "‘")
+    docs <- tm_map(docs, toSpace, "•")
+    docs <- tm_map(docs, toSpace, "”")
+    docs <- tm_map(docs, toSpace, "“")
+    ﻿
+    #remove punctuation
+    docs <- tm_map(docs, removePunctuation)
+    #Strip digits
+    docs <- tm_map(docs, removeNumbers)
+    #remove stopwords
+    docs <- tm_map(docs, removeWords, stopwords("english"))
+    #remove whitespace
+    docs <- tm_map(docs, stripWhitespace)
+    ﻿
+    #Stem document if you want to
+    #docs <- tm_map(docs,stemDocument)
+    ﻿
+    #define and eliminate all custom stopwords
+    myStopwords <- c("thee", "thy", "thou", "thine", "doth")
+    docs <- tm_map(docs, removeWords, myStopwords)
+    ﻿
+    #Create document-term matrix
+    dtm <- DocumentTermMatrix(docs)
+    ﻿
+    #collapse matrix by summing over columns
+    freq <- colSums(as.matrix(dtm))
+    #length should be total number of terms
+    length(freq)
+    #create sort order (descending)
+    ord <- order(freq,decreasing=TRUE)
+    #List all terms in decreasing order of freq and write to disk
+    freq[ord]
+    write.csv(freq[ord],"word_freq.csv")
+    #this wrote the csv to the directory with your sonnets file
+    #make sure to remove the csv or you'll get bad results
+    ﻿
+    #load topic models library
+    library(topicmodels)
+    #Set parameters for Gibbs sampling
+    burnin <- 4000
+    iter <- 2000
+    thin <- 500
+    seed <-list(2003,5,63,100001,765)
+    nstart <- 5
+    best <- TRUE
+    #set k number of topics
+    k<-10
+    #Run LDA using Gibbs sampling
+    ldaOut <-LDA(dtm,k, method="Gibbs", control=list(nstart=nstart, seed = seed, best=best, burnin = burnin, iter = iter, thin=thin))
+    #write out results
+    #docs to topics
+    ldaOut.topics <- as.matrix(topics(ldaOut))
+    #write to csv if you want.
+    #write.csv(ldaOut.topics,file=paste("LDAGibbs",k,"DocsToTopics.csv"))
+    #top 6 terms in each topic
+    #ldaOut.terms <- as.matrix(terms(ldaOut,6))
+    #write.csv(ldaOut.terms,file=paste("LDAGibbs",k,"TopicsToTerms.csv"))
+    #probabilities associated with each topic assignment
+    topicProbabilities <- as.data.frame(ldaOut@gamma)
+    #write.csv(topicProbabilities,file=paste("LDAGibbs",k,"TopicProbabilities.csv"))
+    #Find relative importance of top 2 topics
+    topic1ToTopic2 <- lapply(1:nrow(dtm),function(x)
+      sort(topicProbabilities[x,])[k]/sort(topicProbabilities[x,])[k-1])
+    ﻿
+    ﻿
+    #Find relative importance of second and third most important topics
+    topic2ToTopic3 <- lapply(1:nrow(dtm),function(x)
+      sort(topicProbabilities[x,])[k-1]/sort(topicProbabilities[x,])[k-2])
+    ﻿
+    ﻿
+    #write to file
+    write.csv(topic1ToTopic2,file=paste("LDAGibbs",k,"Topic1ToTopic2.csv"))
+    write.csv(topic2ToTopic3,file=paste("LDAGibbs",k,"Topic2ToTopic3.csv"))
+    ﻿
+    #create wordclouds based on term frequency 
+    #wordcloud
+    install.packages("wordcloud")
+    library(wordcloud)
+    #setting the same seed each time ensures consistent look across clouds
+    set.seed(42)
+    #limit words by specifying min frequency
+    wordcloud(names(freq),freq, min.freq=70)
+    #this produces a tiny wordcloud, since with removing stopwords and stemming frequencies are low
+    #try again
+    wordcloud(names(freq), freq, min.freq=50)
+    wordcloud(names(freq), freq, min.freq=25)
+    ﻿
+    #to fix, can create topic models with more terms
+    #top 25 terms in each topic
+    ldaOut.terms25 <- as.matrix(terms(ldaOut,25))
+    #top 50 terms in each topic
+    ldaOut.terms50<-as.matrix(terms(ldaOut, 50))
+    ﻿
+    #try to make wordclouds with the larger topics; not going to work b/c not proportional
+    ﻿
+    #back to original directory
+    setwd("C:/Users/Amanda/Desktop/sonnets R")
+    library(rJava)
+    ﻿
+    library(XML)
+    library(mallet)
+    install.packages("rJava")
+    library(rJava)
+    ﻿
+    chunk.size <- 1000 # number of words per chunk
+    ﻿
+    makeFlexTextChunks <- function(docs, chunk.size=500, percentage=TRUE){
+      x <- seq_along(docs)
+      if(percentage){
+        max.length <- length(docs)/chunk.size
+        chunks.l <- split(docs, ceiling(x/max.length))
+      } else {
+        chunks.l <- split(docs, ceiling(x/chunk.size))
+        #deal with small chunks at the end
+        if(length(chunks.l[[length(chunks.l)]]) <=
+           length(chunks.l[[length(chunks.l)]])/2){
+          chunks.l[[length(chunks.l)-1]] <-
+            c(chunks.l[[length(chunks.l)-1]],
+              chunks.l[[length(chunks.l)]])
+          chunks.l[[length(chunks.l)]] <- NULL
+        }
+      }
+      chunks.l <- lapply(chunks.l, paste, collapse=" ")
+      chunks.df <- do.call(rbind, chunks.l)
+      return(chunks.df)
+    }
+    topic.m <- NULL
+    for(i in 1:length(files)){
+      chunk.m <- makeFlexTextChunks(files, chunk.size,
+                                    percentage=FALSE)
+      textname <- gsub("\\..*","", files[i])
+      segments.m <- cbind(paste(textname,
+                                segment=1:nrow(chunk.m), sep="_"), chunk.m)
+      topic.m <- rbind(topic.m, segments.m)
+    }
+    ﻿
+    documents <- as.data.frame(topic.m, stringsAsFactors=F)
+    colnames(documents) <- c("id", "text")
+    ﻿
+    mallet.instances <- mallet.import(documents$id,
+                                      documents$text,
+                                      "FolgerDigitalTexts_XML_Son/em stopwordlist.csv",
+                                      FALSE,
+                                      token.regexp="[\\p{L}']+")
+    ﻿
+    ## Create a topic trainer object.
+    topic.model <- MalletLDA(num.topics=50)
+    topic.model$loadDocuments(mallet.instances)
+    ﻿
+    vocabulary <- topic.model$getVocabulary()
+    ﻿
+    word.freqs <- mallet.word.freqs(topic.model)
+    ﻿
+    topic.model$setAlphaOptimization(40, 80)
+    topic.model$train(400)
+    ﻿
+    ﻿
+    ﻿
+    word.freqs
+    head(vocabulary)
+    order(word.freqs[1:50], decreasing = TRUE)
+    vocabulary[1:50]
+    topic.words.m <- mallet.topic.words(topic.model,
+                                        smoothed=TRUE,
+                                        normalized=TRUE)
+    topic.top.words <- mallet.top.words(topic.model,
+                                        topic.words.m, 100)
+    #install.packages("wordcloud")
+    library(wordcloud)
+    wordcloud(topic.top.words$words,
+              topic.top.words$weights,
+              c(4,.8), rot.per=0, random.order=F)
+    warnings()
+    for(i in 1:50){
+      topic.top.words <- mallet.top.words(topic.model,
+                                          topic.words.m[i,], 100)
+      print(wordcloud(topic.top.words$words,
+                      topic.top.words$weights,
+                      c(4,.8), rot.per=0,
+                      random.order=F))
+    }
+    warnings()
+    #add color to 20
+    for(i in 1:20){ 
+      topic.top.words <- mallet.top.words(topic.model,
+                                          topic.words.m[i,], 100)
+      print(wordcloud(topic.top.words$words,
+                      topic.top.words$weights,
+                      c(4,.8), rot.per=0,
+                      random.order=F,
+                      colors=brewer.pal(6,"Dark2")))
+    }
+
