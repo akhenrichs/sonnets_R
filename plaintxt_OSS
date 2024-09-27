@@ -1,0 +1,160 @@
+    sonnets.v<-scan("https://ia600300.us.archive.org/5/items/shakespearessonn01041gut/wssnt10.txt", what = "character", sep = "\n")
+    start.v<-which(sonnets.v=="THE SONNETS")
+    end.v<-which(sonnets.v=="  Love's fire heats water, water cools not love.")
+    start.metadata.v <- sonnets.v[1:start.v -1]
+    end.metadata.v <- sonnets.v[(end.v+1):length(sonnets.v)]
+    metadata.v <- c(start.metadata.v, end.metadata.v)
+    sonnet.lines.v <- sonnets.v[start.v:end.v]
+    sonnet.lines.v
+    ﻿
+    #install stringr to try to split sonnets
+    install.packages("stringr", dependencies = TRUE)
+    library(stringr)
+    ﻿
+    #combine stringr with grep, and then try to write to external file. DOESN'T WORK
+    sonnets.vector <- str_split(sonnet.word.l, str_extract_all(MDCLXVI, ignore_case = F), n=Inf, simplify = FALSE)
+    sonnets.vector[1]
+    ﻿
+    #try file.split; can't find the package so also doesn't work
+    setwd("~/Desktop/Sonnets R/directory for article/txt only!")
+    orig.dir <- getwd(); setwd(tempdir()); # move to temporary dir
+    file.name <- "sonnets.txt"
+    install.packages(ncmisc)
+    new.files <- file.split(file.name,size=15)
+    unlink(new.files); unlink(file.name)
+    setwd(orig.dir)
+    file.s
+    library(tm)
+    splits<-c("I",        "II",       "III","IV",       "V",       "VI",       "VII",      "VIII",    
+              "IX",       "X",        "XI",       "XII",     "XIII",     "XIV",      "XV",       "XVI",   "XVII",     "XVIII",    "XIX",      "XX",       "XXI",  "XXII",     "XXIII",    "XXIV",    "XXV",      "XXVI",     "XXVII",    "XXVIII",   "XXIX",     "XXX",      "XXXI",     "XXXII",  "XXXIII",   "XXXIV",    "XXXV",     "XXXVI",    "XXXVII",   "XXXVIII",  "XXXIX",    "XL",      
+               "XLI",      "XLII",     "XLIII",    "XLIV",     "XLV",      "XLVI",     "XLVII",    "XLVIII",  
+                 "XLIX",     "L",        "LI",       "LII",      "LIII",     "LIV",      "LV",       "LVI",     
+                "LVII",     "LVIII",    "LIX",      "LX",      "LXI",      "LXII",     "LXIII",    "LXIV",    
+                "LXV",      "LXVI" ,    "LXVII",    "LXVIII",  "LXIX",     "LXX",      "LXXI",     "LXXII",   
+                "LXXIII",   "LXXIV",    "LXXV",     "LXXVI",    "LXXVII",   "LXXVIII",  "LXXIX",    "LXXX",    
+               "LXXXI",    "LXXXII",   "LXXXIII",  "LXXXIV",   "LXXXV",    "LXXXVI",   "LXXXVII",  "LXXXVIII",
+                "LXXXIX",   "XC",       "XCI",      "XCII",     "XCIII",    "XCIV",     "XCV",      "XCVI",    
+             "XCVII",    "XCVIII",   "XCIX",     "C",        "CI",       "CII",      "CIII",     "CIV",     
+              "CV",       "CVI",      "CVII",     "CVIII",    "CIX",      "CX",       "CXI",      "CXII",    
+             "CXIII",    "CXIV",     "CXV",      "CXVI",     "CXVII",    "CXVIII",   "CXIX",     "CXX",     
+                "CXXI",     "CXXII",    "CXXIII",   "CXXIV",    "CXXV",     "CXXVI",    "CXXVII",   "CXXXIII", 
+                 "CXXIX",    "CXXX",     "CXXXI",    "CXXXII",   "CXXXIII",  "CXXXIV",   "CXXXV",    "CXXXVI",  
+                "CXXXVII",  "CXXXVIII", "CXXXIX",   "CXL",      "CXLI",     "CXLII",    "CXLIII",   "CXLIV",   
+                 "CXLV",     "CXLVI",    "CXLVII",   "CXLVIII",  "CXLIX",    "CL",       "CLI",      "CLII",    
+                 "CLIII",    "CLIV")
+    files.l<-files
+    install.packages("quanteda")
+    library(quanteda)
+    readPlain(elem = files, language = "English", id=T)
+    again<-strsplit(docs, "splits")
+    again
+    writeLines(as.character(again)[900])
+    #try strsplit with regex
+    new.rex<-rex::as.regex("\\MDCLXVI+")
+    pattern<-new.rex
+    pattern
+    breaks<-strsplit(sonnet.lines.v,pattern)
+    breaks
+    sonnet.breaks.v<-grep("^[MDCLXVI]+$", sonnet.lines.v)
+    writeLines(as.character(sonnet.breaks.v[1]))
+    sonnet.lines.v[sonnet.breaks.v]
+    sonnet.breaks.v
+    sonnet.lines.v<-c(sonnet.lines.v, "END")
+    last.position.v<-length(sonnet.lines.v)
+    ﻿
+    #this prints the line number where the sonnet breaks are. 
+    sonnet.breaks.v<-c(sonnet.breaks.v,last.position.v)
+    sonnet.breaks.v
+    sonnet.lines.v[4]
+    ﻿
+    #i want to write to file, splitting into separate documnets where i have grep already
+    ﻿
+    sonnet.words.v <- tolower(paste(sonnet.lines.v, collapse=" "))
+    sonnet.words.v
+    sonnet.words.l<-gsub("[^[:alnum:][:space:]']", " ", sonnet.words.v)
+    sonnet.words.l
+    sonnet.word.l<-strsplit(sonnet.words.l, "\\s+")
+    sonnet.word.v <- unlist(sonnet.word.l)
+    sonnet.word.v <- sonnet.word.v[which(sonnet.word.v!="")]
+    sonnet.word.v
+    ﻿
+    library(tm)
+    #preprocess text to a dtm
+    ﻿
+    ﻿
+    #read sonnets into a character vector
+    files <-scan("https://ia600300.us.archive.org/5/items/shakespearessonn01041gut/wssnt10.txt", what = "character", sep = "\n")
+    ﻿
+    files<- (sonnet.lines.v/sonnet.breaks.v)
+    #want to have each sonnet treated as a document;how does that happen? 
+    setwd("~/Desktop/Sonnets R/directory for article/txt only!")
+    ﻿
+    #create corpus from vector
+    filenames <- list.files(getwd(),pattern="*.txt")
+    ﻿
+    #read files into a character vector
+    files <- lapply(filenames,readLines)
+    files
+    ﻿
+    docs <- Corpus(VectorSource(files))
+    docs
+    #start preprocessing
+    #Transform to lower case
+    docs <-tm_map(docs,content_transformer(tolower))
+    #remove potentially problematic symbols
+    toSpace <- content_transformer(function(x, pattern) {return (gsub(pattern, "", x))})
+    docs <- tm_map(docs, toSpace, "-")
+    docs <- tm_map(docs, toSpace, "’")
+    docs <- tm_map(docs, toSpace, "‘")
+    docs <- tm_map(docs, toSpace, "•")
+    docs <- tm_map(docs, toSpace, "”")
+    docs <- tm_map(docs, toSpace, "“")
+    ﻿
+    #remove punctuation
+    docs <- tm_map(docs, removePunctuation)
+    #Strip digits
+    docs <- tm_map(docs, removeNumbers)
+    #remove stopwords
+    docs <- tm_map(docs, removeWords, stopwords("english"))
+    #remove whitespace
+    docs <- tm_map(docs, stripWhitespace)
+    ﻿
+    #Stem document if you want to
+    #docs <- tm_map(docs,stemDocument)
+    ﻿
+    #define and eliminate all custom stopwords
+    myStopwords <- c("thee", "thy", "thou", "thine", "doth")
+    docs <- tm_map(docs, removeWords, myStopwords)
+    ﻿
+    #Create document-term matrix
+    dtm <- DocumentTermMatrix(docs)
+    #collapse matrix by summing over columns
+    freq <- colSums(as.matrix(dtm))
+    #length should be total number of terms
+    length(freq)
+    #create sort order (descending)
+    ord <- order(freq,decreasing=TRUE)
+    #List all terms in decreasing order of freq and write to disk
+    freq[ord]
+    #write.csv(freq[ord],"word_freq.csv")
+    #this wrote the csv to the directory with your sonnets file
+    #make sure to remove the csv or you'll get bad results
+    ﻿
+    #load topic models library
+    library(topicmodels)
+    #Set parameters for Gibbs sampling
+    burnin <- 4000
+    iter <- 2000
+    thin <- 500
+    seed <-list(2003,5,63,100001,765)
+    nstart <- 5
+    best <- TRUE
+    #set k number of topics
+    k<-10
+    #Run LDA using Gibbs sampling
+    ldaOut <-LDA(dtm,k, method="Gibbs", control=list(nstart=nstart, seed = seed, best=best, burnin = burnin, iter = iter, thin=thin))
+    #write out results
+    #docs to topics
+    ldaOut.topics <- as.matrix(topics(ldaOut))
+    ldaOut.topics
+
